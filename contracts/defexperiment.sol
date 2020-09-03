@@ -189,12 +189,15 @@ contract tokenSale is Owned,Pausable {
 
     mapping (address => uint256) advisorTokenSent;
     mapping (address => uint256) advisorTokenReleased;
+    mapping (address => uint256) advisorVestingTime;
 
     mapping (address => uint256) incentiveTokenSent;
     mapping (address => uint256) incentiveTokenReleased;
+    mapping(address => uint256) incentiveTokenTime;
 
     mapping (address => uint256) stockHoldersTokenSent;
     mapping (address => uint256) stockHoldersTokenReleased;
+    mapping (address => uint256) stockTokenTime; 
     
     uint256 public hardcapInEther = 2000 ether;
     uint256 public etherRaised;
@@ -242,6 +245,7 @@ contract tokenSale is Owned,Pausable {
     require(advisorTokens >= value);
     advisorTokenSent[_advisorAddress] = value;
     incentiveTokens = incentiveTokens.sub(value);
+    advisorVestingTime[_advisorAddress] = now.add(1209600); 
       
   }
 
@@ -252,6 +256,7 @@ contract tokenSale is Owned,Pausable {
     require(incentiveTokens >= value);
     incentiveTokenSent[_incentiveAddress] = value;
     incentiveTokens = incentiveTokens.sub(value);
+    incentiveTokenTime[_incentiveAddress] = now;
       
   }
 
@@ -261,6 +266,7 @@ contract tokenSale is Owned,Pausable {
     require(stockHolders >= value);
     stockHoldersTokenSent[_stockAddress] = value;
     stockHolders = stockHolders.sub(value);
+    stockTokenTime[_stockAddress] = now.add(2592000);
       
   }
 
@@ -405,7 +411,7 @@ contract tokenSale is Owned,Pausable {
   
     require(vestingPeriodStartsFrom > 0); 
     uint256 preSaleCycle = getCycleforSecondBlock();
-    uint256 oneHourPercent = blockTwoVestingReleased[msg.sender].mul(297).div(1000); //0.137%
+    uint256 oneHourPercent = blockTwoVestingTokens[msg.sender].mul(297).div(1000); //0.137%
     require(blockTwoVestingReleased[msg.sender] != blockTwoVestingTokens[msg.sender]);
     require(blockTwoVestingReleased[msg.sender] != oneHourPercent.mul(preSaleCycle));
 
@@ -446,7 +452,7 @@ contract tokenSale is Owned,Pausable {
   
     require(vestingPeriodStartsFrom > 0); 
     uint256 preSaleCycle = getCycleforThirdBlock();
-    uint256 oneHourPercent = blockThreeVestingReleased[msg.sender].mul(595).div(1000); //0.137%
+    uint256 oneHourPercent = blockThreeVestingTokens[msg.sender].mul(595).div(1000); //0.137%
     require(blockThreeVestingReleased[msg.sender] != blockThreeVestingTokens[msg.sender]);
     require(blockThreeVestingReleased[msg.sender] != oneHourPercent.mul(preSaleCycle));
 
@@ -473,13 +479,141 @@ contract tokenSale is Owned,Pausable {
 
     function getCycleforTeamTokens() public view returns (uint256){
      
+    require(teamVestingTime[msg.sender] > 0 && now > (teamVestingTime[msg.sender]) ); 
      uint256 cycle = now.sub(teamVestingTime[msg.sender]);
+    
+     if(cycle <= 86400)
+     {
+         return 0;
+     }
+     else if (cycle > 86400 && cycle < 94608000)
+     {     
+    
+      uint256 secondsToHours = cycle.div(86400);
+      return secondsToHours;
+         
+     }
+
+    else if (cycle >= 94608000)
+    {
+        return 109501;
+    }
+    
+    }
+
+    function claimTeamTokens() public returns (bool) {
+  
+    require(teamVestingTime[msg.sender] > 0 && now > (teamVestingTime[msg.sender]) ); 
+
+    uint256 preSaleCycle = getCycleforTeamTokens();
+
+    uint256 oneDayPercent = teamTokenSent[msg.sender].mul(913242).div(1000000000); //0.000913242 per day after 1month till next 3 years%
+    require(teamTokenReleased[msg.sender] != teamTokenSent[msg.sender]);
+    require(teamTokenReleased[msg.sender] != oneDayPercent.mul(preSaleCycle));
+
+    if(teamTokenReleased[msg.sender] < oneDayPercent.mul(preSaleCycle))
+    {
+        uint256 tokenToSend = oneDayPercent.mul(preSaleCycle).sub(teamTokenReleased[msg.sender]);
+        teamTokenReleased[msg.sender] = oneDayPercent.mul(preSaleCycle);
+        return ERC20(tokenContract).transfer(msg.sender, tokenToSend);
+    }
+
+    }
+
+    function getCycleforIncentiveTokens() public view returns (uint256){
+     
+     uint256 cycle = now.sub(incentiveTokenTime[msg.sender]);
+    
+     if(cycle <= 1209600)
+     {
+         return 0;
+     }
+     else if (cycle > 1209600 && cycle < 60480000)
+     {     
+    
+      uint256 secondsToHours = cycle.div(1209600);
+      return secondsToHours;
+         
+     }
+
+    else if (cycle >= 60480000)
+    {
+        return 50;
+    }
+    
+    }
+
+    function claimIncentiveTokens() public returns (bool) {
+  
+    uint256 preSaleCycle = getCycleforIncentiveTokens();
+
+    uint256 oneDayPercent = incentiveTokenSent[msg.sender].mul(2).div(100); //0.000913242 per day after 1month till next 3 years%
+    require(incentiveTokenReleased[msg.sender] != incentiveTokenSent[msg.sender]);
+    require(incentiveTokenReleased[msg.sender] != oneDayPercent.mul(preSaleCycle));
+
+    if(incentiveTokenReleased[msg.sender] < oneDayPercent.mul(preSaleCycle))
+    {
+        uint256 tokenToSend = oneDayPercent.mul(preSaleCycle).sub(teamTokenReleased[msg.sender]);
+        incentiveTokenReleased[msg.sender] = oneDayPercent.mul(preSaleCycle);
+        return ERC20(tokenContract).transfer(msg.sender, tokenToSend);
+    }
+
+    }
+
+    function getCycleforAdvisorTokens() public view returns (uint256){
+     
+    require(advisorVestingTime[msg.sender] > 0 && now > (advisorVestingTime[msg.sender]) ); 
+     uint256 cycle = now.sub(advisorVestingTime[msg.sender]);
+    
+     if(cycle <= 86400)
+     {
+         return 0;
+     }
+     else if (cycle > 86400 && cycle < 94608000)
+     {     
+    
+      uint256 secondsToHours = cycle.div(86400);
+      return secondsToHours;
+         
+     }
+
+    else if (cycle >= 94608000)
+    {
+        return 109501;
+    }
+    
+    }
+
+    function claimAdvisorTokens() public returns (bool) {
+  
+    require(advisorVestingTime[msg.sender] > 0 && now > (advisorVestingTime[msg.sender]) ); 
+
+    uint256 preSaleCycle = getCycleforAdvisorTokens();
+
+    uint256 oneDayPercent = advisorTokenSent[msg.sender].mul(1369863).div(1000000000); //0.000913242 per day after 1month till next 3 years%
+    require(advisorTokenReleased[msg.sender] != advisorTokenSent[msg.sender]);
+    require(advisorTokenReleased[msg.sender] != oneDayPercent.mul(preSaleCycle));
+
+    if(advisorTokenReleased[msg.sender] < oneDayPercent.mul(preSaleCycle))
+    {
+        uint256 tokenToSend = oneDayPercent.mul(preSaleCycle).sub(advisorTokenReleased[msg.sender]);
+        advisorTokenReleased[msg.sender] = oneDayPercent.mul(preSaleCycle);
+        return ERC20(tokenContract).transfer(msg.sender, tokenToSend);
+    }
+
+    }
+
+
+    function getCycleforStockTokens() public view returns (uint256){
+     
+    require(stockTokenTime[msg.sender] > 0 && now > (stockTokenTime[msg.sender]) ); 
+     uint256 cycle = now.sub(stockTokenTime[msg.sender]);
     
      if(cycle <= 3600)
      {
          return 0;
      }
-     else if (cycle > 3600 && cycle < 2592000)
+     else if (cycle > 3600 && cycle < 5184000)
      {     
     
       uint256 secondsToHours = cycle.div(3600);
@@ -487,25 +621,27 @@ contract tokenSale is Owned,Pausable {
          
      }
 
-    else if (cycle >= 2592000)
+    else if (cycle >= 5184000)
     {
-        return 100;
+        return 1440;
     }
     
     }
 
-    function claimTeamTokens() public returns (bool) {
+    function claimStockTokens() public returns (bool) {
   
-    require(vestingPeriodStartsFrom > 0); 
-    uint256 preSaleCycle = getCycleforThirdBlock();
-    uint256 oneHourPercent = blockThreeVestingReleased[msg.sender].mul(595).div(1000); //0.137%
-    require(blockThreeVestingReleased[msg.sender] != blockThreeVestingTokens[msg.sender]);
-    require(blockThreeVestingReleased[msg.sender] != oneHourPercent.mul(preSaleCycle));
+    require(stockTokenTime[msg.sender] > 0 && now > (stockTokenTime[msg.sender]) ); 
 
-    if(blockThreeVestingReleased[msg.sender] < oneHourPercent.mul(preSaleCycle))
+    uint256 preSaleCycle = getCycleforStockTokens();
+
+    uint256 oneDayPercent = stockHoldersTokenSent[msg.sender].mul(69444444).div(1000000000); //0.000913242 per day after 1month till next 3 years%
+    require(stockHoldersTokenReleased[msg.sender] != stockHoldersTokenSent[msg.sender]);
+    require(stockHoldersTokenReleased[msg.sender] != oneDayPercent.mul(preSaleCycle));
+
+    if(stockHoldersTokenReleased[msg.sender] < oneDayPercent.mul(preSaleCycle))
     {
-        uint256 tokenToSend = oneHourPercent.mul(preSaleCycle).sub(blockThreeVestingReleased[msg.sender]);
-        blockThreeVestingReleased[msg.sender] = oneHourPercent.mul(preSaleCycle);
+        uint256 tokenToSend = oneDayPercent.mul(preSaleCycle).sub(stockHoldersTokenReleased[msg.sender]);
+        stockHoldersTokenReleased[msg.sender] = oneDayPercent.mul(preSaleCycle);
         return ERC20(tokenContract).transfer(msg.sender, tokenToSend);
     }
 
