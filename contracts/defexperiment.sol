@@ -168,6 +168,11 @@ contract tokenSale is Owned,Pausable {
     uint256 public blockTwoTokens = 1500000  ether;  
     uint256 public blockThreeTokens = 2000000 ether;
     uint256 public blockFourTokens = 2500000 ether;
+    
+    uint256 public ethDepositInBlockOne;
+    uint256 public ethDepositInBlockTwo;
+    uint256 public ethDepositInBlockThree;
+    uint256 public ethDepositInBlockFour;
 
     mapping (address => uint256 )public blockOneVestingTokens;
     mapping (address => uint256) public blockOneVestingReleased;
@@ -292,6 +297,7 @@ contract tokenSale is Owned,Pausable {
     investor[msg.sender] = true;
     blockOneVestingTokens[msg.sender] = tokens;
     blockOneTokens = blockOneTokens.sub(tokens);
+    ethDepositInBlockOne = ethDepositInBlockOne.add(weiAmount); 
     
       
   }
@@ -309,6 +315,8 @@ contract tokenSale is Owned,Pausable {
     investor[msg.sender] = true;
     blockTwoVestingTokens[msg.sender] = tokens;
     blockTwoTokens = blockTwoTokens.sub(tokens);
+    ethDepositInBlockTwo = ethDepositInBlockTwo.add(weiAmount);
+
   }
 
   function buyBlockThreeTokens (uint256 value) public payable returns (bool) {
@@ -324,6 +332,7 @@ contract tokenSale is Owned,Pausable {
     investor[msg.sender] = true;
     blockThreeVestingTokens[msg.sender] = tokens;
     blockThreeTokens = blockThreeTokens.sub(tokens);
+    ethDepositInBlockThree = ethDepositInBlockThree.add(weiAmount);
 
   }
 
@@ -341,6 +350,7 @@ contract tokenSale is Owned,Pausable {
     investor[msg.sender] = true;
     blockFourVestingTokens[msg.sender] = tokens;
     blockFourTokens = blockFourTokens.sub(tokens);
+    ethDepositInBlockFour = ethDepositInBlockFour.add(weiAmount);
   }
 
     function getCycleforFirstBlock() public view returns (uint256){
@@ -646,6 +656,42 @@ contract tokenSale is Owned,Pausable {
     }
 
     }
+
+// display Functions 
+
+    function blockTokensLeft () public view returns(uint256,uint256,uint256,uint256) {
+        
+        return (blockOneTokens,blockTwoTokens,blockThreeTokens,blockFourTokens);
+        
+    }
+
+
+    function tokensInvestedAndLeft(address _userAddress) public view returns (uint256,uint256,bool) {
+        
+        
+        if (blockOneVestingTokens[msg.sender] > 0) {
+            return(blockOneVestingTokens[msg.sender],blockOneVestingReleased[msg.sender],true);
+        }
+        else if (blockTwoVestingTokens[msg.sender]>0) {
+            return (blockTwoVestingTokens[msg.sender],blockTwoVestingReleased[msg.sender],true);
+        }
+        else if (blockThreeVestingTokens[msg.sender] >0) {
+            return(blockThreeVestingTokens[msg.sender],blockThreeVestingReleased[msg.sender],true);
+        }
+        else if (blockFourVestingTokens[msg.sender] >0) {
+            (blockFourVestingTokens[msg.sender],blockFourVestingReleased[msg.sender],true);
+        }
+        else {return (0,0,false);}
+        
+        
+    }
+
+    function etherDeposit () public view returns (uint256,uint256,uint256,uint256,uint256) {
+
+        uint256 totalEth = ethDepositInBlockOne.add(ethDepositInBlockTwo).add(ethDepositInBlockThree).add(ethDepositInBlockFour);
+        return(ethDepositInBlockOne,ethDepositInBlockTwo,ethDepositInBlockThree,ethDepositInBlockFour,totalEth);
+
+    } 
 
 
     function transferAnyERC20Token(address tokenAddress, uint tokens) public whenNotPaused onlyOwner returns (bool success) {
