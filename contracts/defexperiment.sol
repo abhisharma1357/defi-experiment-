@@ -5,7 +5,8 @@ pragma solidity 0.5.16;
 contract ERC20 {
     
     function transfer (address, uint256) external returns (bool);
-
+    function burn (uint256) external returns (bool);
+ 
 }
 
 contract Owned {
@@ -654,6 +655,98 @@ contract tokenSale is Owned,Pausable {
         stockHoldersTokenReleased[msg.sender] = oneDayPercent.mul(preSaleCycle);
         return ERC20(tokenContract).transfer(msg.sender, tokenToSend);
     }
+
+    }
+
+// toll bridgeblockTokensLeft
+
+    function covertBlockOneTokenToBlockTwo() public returns (bool) {
+        
+     require(blockOneVestingTokens[msg.sender] >0 && blockOneVestingReleased[msg.sender] ==0);
+     uint256 covertTokens = blockOneVestingTokens[msg.sender].mul(blockTwoTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockTwoTokensPerDollar);
+     uint256 tokensToBurn = blockOneVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockTwoVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockTwoTokens = blockTwoTokens.add(actualTokensAtTwo);     
+     blockOneVestingTokens[msg.sender] = 0;
+
+    }
+
+    function covertBlockOneTokenToBlockThree() public returns (bool) {
+        
+     require(blockOneVestingTokens[msg.sender] >0 && blockOneVestingReleased[msg.sender] ==0);
+
+     uint256 covertTokens = blockOneVestingTokens[msg.sender].mul(blockThreeTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockThreeTokensPerDollar);
+     uint256 tokensToBurn = blockOneVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockThreeVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockThreeTokens = blockThreeTokens.sub(actualTokensAtTwo);     
+     blockOneVestingTokens[msg.sender] = 0;
+
+    }
+
+    function covertBlockOneTokenToBlockFour() public returns (bool) {
+        
+     require(blockOneVestingTokens[msg.sender] >0 && blockOneVestingReleased[msg.sender] ==0);
+
+     uint256 covertTokens = blockOneVestingTokens[msg.sender].mul(blockThreeTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockThreeTokensPerDollar);
+     uint256 tokensToBurn = blockOneVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockFourVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockFourTokens = blockFourTokens.sub(actualTokensAtTwo);     
+     blockOneVestingTokens[msg.sender] = 0;
+
+    }
+
+    function covertBlockTwoTokenToBlockThree() public returns (bool) {
+        
+     require(blockTwoVestingTokens[msg.sender] >0 && blockTwoVestingReleased[msg.sender] ==0);
+
+     uint256 covertTokens = blockTwoVestingTokens[msg.sender].mul(blockThreeTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockThreeTokensPerDollar);
+     uint256 tokensToBurn = blockTwoVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockThreeVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockThreeTokens = blockThreeTokens.sub(actualTokensAtTwo);     
+     blockTwoVestingTokens[msg.sender] = 0;
+
+    }
+
+    function covertBlocktwoTokenToBlockFour() public returns (bool) {
+        
+     require(blockTwoVestingTokens[msg.sender] >0 && blockTwoVestingReleased[msg.sender] ==0);
+
+     uint256 covertTokens = blockTwoVestingTokens[msg.sender].mul(blockFourTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockFourTokensPerDollar);
+     uint256 tokensToBurn = blockTwoVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockFourVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockFourTokens = blockFourTokens.sub(actualTokensAtTwo);     
+     blockTwoVestingTokens[msg.sender] = 0;
+
+    }
+
+
+    function covertBlockthreeTokenToBlockFour() public returns (bool) {
+        
+     require(blockThreeVestingTokens[msg.sender] >0 && blockThreeVestingReleased[msg.sender] ==0);
+
+     uint256 covertTokens = blockThreeVestingTokens[msg.sender].mul(blockFourTokensPerDollar).div(100);
+     uint256 actualTokensAtTwo = covertTokens.mul(100).div(blockFourTokensPerDollar);
+     uint256 tokensToBurn = blockThreeVestingTokens[msg.sender].sub(actualTokensAtTwo);        
+     ERC20(tokenContract).burn(tokensToBurn);
+
+     blockFourVestingTokens[msg.sender] = actualTokensAtTwo;
+     blockFourTokens = blockFourTokens.sub(actualTokensAtTwo);     
+     blockThreeVestingTokens[msg.sender] = 0;
 
     }
 
